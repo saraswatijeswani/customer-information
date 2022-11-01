@@ -1,0 +1,157 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Customer Information CAI CodeTest Template ",
+  "Metadata": {
+    "S3Bucket": {
+      "Description": "Bucket contains React App"
+    },
+    "DynamoDatabase": {
+      "Description": "Database contains data regarding customers"
+    }
+  },
+  "Resources": {
+    "getCustomerFunctionRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Action": ["sts:AssumeRole"],
+              "Effect": "Allow",
+              "Principal": {
+                "Service": ["lambda.amazonaws.com"]
+              }
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+          "arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess"
+        ],
+        "Policies": [
+          {
+            "PolicyName": "getCustomerFunctionRolePolicy0",
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "dynamodb:GetItem",
+                    "dynamodb:DeleteItem",
+                    "dynamodb:PutItem",
+                    "dynamodb:Scan",
+                    "dynamodb:Query",
+                    "dynamodb:UpdateItem",
+                    "dynamodb:BatchWriteItem",
+                    "dynamodb:BatchGetItem",
+                    "dynamodb:DescribeTable",
+                    "dynamodb:ConditionCheckItem"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::Sub": [
+                        "arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${tableName}",
+                        {
+                          "tableName": {
+                            "Ref": "CustomerInfoDBTable"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "Fn::Sub": [
+                        "arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${tableName}/index/*",
+                        {
+                          "tableName": {
+                            "Ref": "CustomerInfoDBTable"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "lambda:createdBy",
+            "Value": "SAM"
+          }
+        ]
+      }
+    },
+    "getAllCustomersFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Handler": "getCustomers.handler",
+        "Runtime": "nodejs16.x",
+        "Code": {
+          "S3Bucket": "customerinformation-bucket"
+        },
+        "Role": {
+          "Fn::GetAtt": ["getCustomerFunctionRole", "Arn"]
+        },
+        "Architectures": ["x86_64"]
+      }
+    },
+    "getCustomerFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Handler": "customers.handler",
+        "Runtime": "nodejs16.x",
+        "Code": {
+          "S3Bucket": "customerinformation-bucket"
+        },
+        "Role": {
+          "Fn::GetAtt": ["getCustomerFunctionRole", "Arn"]
+        },
+        "Architectures": ["x86_64"]
+      }
+    },
+    "CustomerInformationDBTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "TableName": "Customer_Information",
+        "BillingMode": "PAY_PER_REQUEST",
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "id",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "id",
+            "KeyType": "HASH"
+          }
+        ]
+      }
+    },
+    "AppBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "AccessControl": "PublicRead",
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": "false",
+          "BlockPublicPolicy": "false",
+          "IgnorePublicAcls": "false",
+          "RestrictPublicBuckets": "false"
+        },
+        "WebsiteConfiguration": {
+          "IndexDocument": "index.html"
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "S3WebsiteURL": {
+      "Value": {
+        "Fn::GetAtt": ["AppBucket", "WebsiteURL"]
+      },
+      "Description": "URL for website is hosted on S3"
+    }
+  }
+}

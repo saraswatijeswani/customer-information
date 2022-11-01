@@ -22,6 +22,10 @@ jobs:
               aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
               aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
               aws-region: ap-south-1
+<<<<<<< HEAD
           - name: Copy to S3  
+=======
+          - name: Copy to S3
+>>>>>>> 01c86e7a407cbe3317c17be1cde0ed6b3a9de5f8
             run: aws s3 sync ./build/. s3://cai-code-test-bucket
 
